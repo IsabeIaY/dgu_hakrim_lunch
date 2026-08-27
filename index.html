@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>학림관 점심 자판기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Nanum+Gothic+Coding:wght@400;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --body:#EAD6A2; --body-2:#E0C88C; --panel:#FBF3E2;
+    --ink:#241E17; --ink-soft:#6B6155;
+    --tomato:#E24E32; --tomato-dk:#B93A22;
+    --mustard:#F2B33D; --teal:#127C6B; --teal-dk:#0C5A4E;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:"Noto Sans KR",system-ui,sans-serif;color:var(--ink);
+    background:
+      radial-gradient(circle at 12% 6%, rgba(242,179,61,.22), transparent 42%),
+      radial-gradient(circle at 88% 96%, rgba(18,124,107,.14), transparent 45%),
+      #F4EAD2;
+    min-height:100%;display:flex;justify-content:center;padding:14px 13px 22px;
+  }
+  .stage{width:100%;max-width:420px}
+
+  .machine{
+    background:linear-gradient(180deg,var(--body),var(--body-2));
+    border:3px solid var(--ink);border-radius:26px;padding:12px 13px 0;position:relative;
+    box-shadow:0 7px 0 rgba(36,30,23,.22), inset 0 2px 0 rgba(255,255,255,.4);
+  }
+  .machine::before,.machine::after{content:"";position:absolute;top:12px;width:9px;height:9px;border-radius:50%;
+    background:radial-gradient(circle at 34% 32%, #ffffffcc, transparent 55%), var(--ink)}
+  .machine::before{left:13px}.machine::after{right:13px}
+
+  .plate{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:2px 22px 8px}
+  .brand{font-family:"Black Han Sans",sans-serif;font-size:14px;letter-spacing:.02em}
+  .brand small{display:block;font-family:"Nanum Gothic Coding",monospace;font-size:8.5px;
+    font-weight:700;color:var(--ink-soft);letter-spacing:.1em;margin-top:1px}
+  .headtools{display:flex;gap:6px;align-items:center}
+  .mini{font-family:"Noto Sans KR",sans-serif;font-weight:700;font-size:12px;border:2px solid var(--ink);
+    border-radius:999px;background:var(--panel);color:var(--ink);padding:5px 10px;cursor:pointer;text-decoration:none;white-space:nowrap}
+  .mini:active{transform:translateY(1px)}
+  .mini:focus-visible{outline:3px solid var(--mustard);outline-offset:2px}
+
+  .face{background:rgba(255,255,255,.28);border:2px solid var(--ink);border-radius:16px;padding:12px}
+  .status{font-family:"Nanum Gothic Coding",monospace;font-size:10.5px;font-weight:700;color:var(--ink-soft);
+    text-align:center;margin:0 0 10px;min-height:14px}
+  .status.err{color:var(--tomato-dk)}
+
+  .key{font-family:"Noto Sans KR",sans-serif;border:2.5px solid var(--ink);border-radius:12px;
+    background:var(--panel);color:var(--ink);cursor:pointer;box-shadow:0 3px 0 var(--ink);position:relative;
+    transition:transform .05s ease,box-shadow .05s ease,background .12s ease,color .12s ease;
+    display:flex;align-items:center;justify-content:center}
+  .key:active{transform:translateY(3px);box-shadow:0 0 0 var(--ink)}
+  .key:focus-visible{outline:3px solid var(--mustard);outline-offset:2px}
+  .key .cnt{position:absolute;top:3px;right:5px;font-size:9px;font-weight:700;opacity:.45}
+  .key[aria-pressed="true"] .cnt{opacity:.7}
+
+  .key-all{width:100%;gap:9px;padding:11px;font-family:"Black Han Sans",sans-serif;font-size:20px;
+    margin-bottom:7px;box-shadow:0 4px 0 var(--ink)}
+  .key-all .em{font-size:23px}
+  .key-all[aria-pressed="true"]{background:var(--tomato);color:#fff}
+  .key-row{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+  .key-c{flex-direction:column;gap:2px;padding:8px 2px 7px}
+  .key-c .em{font-size:20px;line-height:1}
+  .key-c .lb{font-weight:700;font-size:11.5px}
+  .key-c[aria-pressed="true"]{background:var(--teal);color:#fff}
+
+  .hintline{font-size:10px;color:var(--ink-soft);text-align:center;margin:8px 2px 0;font-weight:500;min-height:12px}
+
+  .dist-head{display:flex;justify-content:space-between;align-items:baseline;margin:13px 2px 3px}
+  .dist-head .lb{font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--ink-soft);text-transform:uppercase}
+  .dist-head .v{font-family:"Black Han Sans",sans-serif;font-size:17px;color:var(--tomato)}
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:8px;border-radius:999px;
+    background:var(--body-2);border:2px solid var(--ink);outline:none;margin:4px 0 0}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:25px;height:25px;
+    border-radius:50%;background:var(--mustard);border:2.5px solid var(--ink);cursor:pointer;box-shadow:0 2px 0 var(--ink)}
+  input[type=range]::-moz-range-thumb{width:25px;height:25px;border-radius:50%;background:var(--mustard);
+    border:2.5px solid var(--ink);cursor:pointer}
+  input[type=range]:focus-visible{outline:3px solid var(--mustard);outline-offset:3px}
+  input[type=range]:disabled{opacity:.4;cursor:not-allowed}
+
+  .switch{width:100%;margin-top:9px;font-family:"Noto Sans KR",sans-serif;font-weight:700;font-size:14px;
+    border:2.5px solid var(--ink);border-radius:11px;background:var(--panel);color:var(--ink);padding:10px;
+    cursor:pointer;box-shadow:0 3px 0 var(--ink);display:flex;align-items:center;justify-content:center;gap:8px;
+    transition:transform .05s ease,box-shadow .05s ease,background .12s ease,color .12s ease}
+  .switch:active{transform:translateY(3px);box-shadow:0 0 0 var(--ink)}
+  .switch:focus-visible{outline:3px solid var(--mustard);outline-offset:2px}
+  .switch[aria-pressed="true"]{background:var(--teal);color:#fff;box-shadow:0 3px 0 var(--teal-dk)}
+  .switch .led{width:9px;height:9px;border-radius:50%;background:var(--ink);opacity:.35}
+  .switch[aria-pressed="true"] .led{background:#fff;opacity:1;box-shadow:0 0 8px #fff}
+
+  .roll{width:100%;margin-top:12px;font-family:"Black Han Sans",sans-serif;font-size:22px;letter-spacing:.04em;
+    color:#fff;background:var(--tomato);border:3px solid var(--ink);border-radius:15px;padding:15px;cursor:pointer;
+    box-shadow:0 5px 0 var(--tomato-dk);transition:transform .06s ease,box-shadow .06s ease}
+  .roll:active{transform:translateY(4px);box-shadow:0 1px 0 var(--tomato-dk)}
+  .roll:focus-visible{outline:3px solid var(--mustard);outline-offset:3px}
+  .roll.rolling{animation:dugu .15s ease-in-out infinite}
+  @keyframes dugu{0%{transform:translateX(0)}25%{transform:translateX(-3px) rotate(-1deg)}
+    50%{transform:translateX(3px) rotate(1deg)}75%{transform:translateX(-2px) rotate(-.6deg)}100%{transform:translateX(0)}}
+
+  .slot{margin:12px -13px 0;height:26px;background:linear-gradient(180deg,#2e2820,#171310);
+    border-top:3px solid var(--ink);border-radius:0 0 23px 23px;position:relative}
+  .slot::before{content:"";position:absolute;left:50%;top:10px;transform:translateX(-50%);
+    width:62%;height:6px;border-radius:4px;background:#000;box-shadow:inset 0 2px 3px #000, 0 1px 0 #55493a}
+
+  .receipt-out{padding:0 12px}
+  .receipt-anim{animation:print .65s steps(20,end)}
+  @keyframes print{0%{clip-path:inset(0 0 100% 0)}100%{clip-path:inset(0 0 0 0)}}
+  .receipt{background:var(--panel);border:2px solid var(--ink);border-bottom:none;border-radius:2px 2px 0 0;
+    padding:15px 18px 11px;font-family:"Nanum Gothic Coding",monospace}
+  .r-head{text-align:center;font-weight:700;font-size:11px;letter-spacing:.08em;color:var(--ink-soft)}
+  .r-name{font-family:"Black Han Sans",sans-serif;font-size:23px;text-align:center;margin:5px 0 3px;
+    word-break:keep-all;letter-spacing:-.01em}
+  .r-tag{text-align:center;margin-bottom:9px}
+  .r-tag span{background:var(--teal);color:#fff;font-weight:700;font-size:10.5px;padding:3px 10px;border-radius:999px;word-break:keep-all}
+  .sep{border-top:2px dashed var(--ink);margin:9px 0}
+  .r-line{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;font-weight:700;padding:2px 0}
+  .r-line .k{color:var(--ink-soft)}
+  .r-line .v{text-align:right;word-break:keep-all}
+  .map-btn{margin-top:11px;display:flex;align-items:center;justify-content:center;gap:8px;width:100%;
+    text-decoration:none;font-family:"Noto Sans KR",sans-serif;font-weight:700;font-size:14.5px;color:var(--ink);
+    background:var(--mustard);border:2px solid var(--ink);border-radius:10px;padding:11px}
+  .map-btn:focus-visible{outline:3px solid var(--tomato);outline-offset:2px}
+  .map-btn.off{background:var(--body-2);color:var(--ink-soft);pointer-events:none}
+  .torn{height:11px;background:
+      linear-gradient(135deg,var(--panel) 50%,transparent 50%),
+      linear-gradient(225deg,var(--panel) 50%,transparent 50%);
+    background-size:11px 11px;background-repeat:repeat-x;filter:drop-shadow(0 1px 0 var(--ink))}
+  .empty{border:2px dashed var(--ink-soft);border-radius:12px;padding:16px;text-align:center;
+    color:var(--ink-soft);font-size:13px;font-weight:500;line-height:1.5;margin-top:6px;background:var(--panel)}
+
+  .foot{margin-top:16px;font-size:11px;color:var(--ink-soft);line-height:1.55;text-align:center}
+  .foot b{color:var(--ink)}
+
+  #confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:50}
+  .cp{position:absolute;top:-16px;width:9px;height:14px;border-radius:2px}
+  @keyframes fall{0%{transform:translateY(-12vh) rotate(0);opacity:1}100%{transform:translateY(112vh) rotate(680deg);opacity:.85}}
+</style>
+</head>
+<body>
+  <main class="stage">
+    <div class="machine">
+      <div class="plate">
+        <div class="brand">학림관 점심 자판기<small>DONGGUK LUNCH-O-MATIC</small></div>
+        <div class="headtools">
+          <a class="mini" id="editLink" style="display:none" target="_blank" rel="noopener">시트 편집</a>
+          <button class="mini" id="refresh" title="시트 새로고침">↻ 새로고침</button>
+        </div>
+      </div>
+
+      <div class="face">
+        <div class="status" id="status">불러오는 중…</div>
+        <div id="keypad"></div>
+        <div class="hintline" id="hintline"></div>
+        <div class="dist-head">
+          <span class="lb">도보 거리</span>
+          <span class="v"><span id="distVal">20</span>분 이내</span>
+        </div>
+        <input type="range" id="dist" min="1" max="20" value="20" aria-label="최대 도보 시간(분)">
+        <button class="switch" id="ddSwitch" aria-pressed="false"><span class="led"></span>📍 동대입구 근처만 보기</button>
+        <button class="roll" id="rollBtn">뽑기!</button>
+      </div>
+
+      <div class="slot"></div>
+    </div>
+
+    <div class="receipt-out" id="result" aria-live="polite"></div>
+    <p class="foot"><b>목록 수정</b>은 구글 시트에서 하면 돼요 · 다음에 열거나 <b>↻ 새로고침</b> 하면 반영됩니다</p>
+  </main>
+  <div id="confetti" aria-hidden="true"></div>
+
+<script>
+  /* ============================================================
+     ★ 구글 시트 연결 ★
+     시트를 '파일 → 공유 → 웹에 게시 → CSV'로 게시한 뒤 나온 주소를
+     아래 SHEET_CSV_URL 따옴표 안에 붙여넣으세요. (비워두면 아래 기본목록 사용)
+     · 카테고리 칸에 "고기, 한식"처럼 쉼표/슬래시로 여러 개 넣으면 둘 다에 잡힙니다.
+     SHEET_EDIT_URL 에 시트 편집 주소를 넣으면 '시트 편집' 버튼이 생깁니다.
+     ============================================================ */
+  const SHEET_CSV_URL  = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTVhB2AD9O2ccDjQFdlFZSSFlW0_HMNUNr7Od49UpUWAbdg54xvVpZ7ej2RqNzuAzFsWz2mpP7j6Z_h/pub?gid=0&single=true&output=csv";
+  const SHEET_EDIT_URL = "https://docs.google.com/spreadsheets/d/15HhHhrSwWrKDj4zb7pescFa0VgviojM54sqeI70d0Xg/edit?usp=sharing";
+
+  /* 시트 연결 전에도 바로 작동하도록 심어둔 기본 목록 (현재 시트 내용) */
+  const 기본목록 = [
+    { 이름:"백채김치찌개 동국대점", 종류들:["한식"], 분:3, 동대입구:false, 링크:"https://naver.me/53lcvSkz" },
+    { 이름:"은화수식당 동국대점", 종류들:["양식"], 분:3, 동대입구:false, 링크:"https://naver.me/GgW8ZZCY" },
+    { 이름:"샐러디 충무로역점", 종류들:["라이트"], 분:3, 동대입구:false, 링크:"https://naver.me/5Rhic2TB" },
+    { 이름:"황토골 충무로역본점", 종류들:["한식"], 분:4, 동대입구:false, 링크:"https://naver.me/5oE5j6fs" },
+    { 이름:"죠티인도레스토랑", 종류들:["동양"], 분:4, 동대입구:false, 링크:"https://naver.me/F3Tj0DTM" },
+    { 이름:"모리짱", 종류들:["일식"], 분:4, 동대입구:false, 링크:"https://naver.me/GTnqTawd" },
+    { 이름:"봉추찜닭 충무로점", 종류들:["한식"], 분:4, 동대입구:false, 링크:"https://naver.me/G7V4PDJQ" },
+    { 이름:"정성순대 서울 충무로점", 종류들:["한식"], 분:4, 동대입구:false, 링크:"https://naver.me/xY4sLvMw" },
+    { 이름:"그린라멘샵", 종류들:["일식"], 분:4, 동대입구:false, 링크:"https://naver.me/GUTl5i7k" },
+    { 이름:"동대닭한마리 본점", 종류들:["한식"], 분:4, 동대입구:false, 링크:"https://naver.me/5qDj3DEZ" },
+    { 이름:"짬뽕야", 종류들:["중식"], 분:5, 동대입구:false, 링크:"https://naver.me/5OQyxOJD" },
+    { 이름:"전자방 필동점", 종류들:["중식"], 분:5, 동대입구:false, 링크:"https://naver.me/51ufOGzG" },
+    { 이름:"충무칼국수보쌈 본점", 종류들:["한식"], 분:6, 동대입구:false, 링크:"https://naver.me/FeXR2xaG" },
+    { 이름:"옥된장 충무로역점", 종류들:["한식"], 분:6, 동대입구:false, 링크:"https://naver.me/xIeXi61Z" },
+    { 이름:"필동면옥", 종류들:["한식"], 분:5, 동대입구:false, 링크:"https://naver.me/5WOQesew" },
+    { 이름:"파파포", 종류들:["동양"], 분:6, 동대입구:false, 링크:"https://naver.me/I55aT1xq" },
+    { 이름:"필동닭칼국수", 종류들:["한식"], 분:6, 동대입구:false, 링크:"https://naver.me/GfCsvRAF" },
+    { 이름:"울엄마해장, 최강달인춘천닭갈비 충무로점", 종류들:["한식"], 분:7, 동대입구:false, 링크:"https://naver.me/x4FLDzRw" },
+    { 이름:"신승호라멘집", 종류들:["일식"], 분:7, 동대입구:false, 링크:"https://naver.me/xQe2A76o" },
+    { 이름:"미분당 충무로점", 종류들:["동양"], 분:9, 동대입구:false, 링크:"https://naver.me/53lKuIzJ" },
+    { 이름:"희희카츠 충무로점", 종류들:["일식"], 분:8, 동대입구:false, 링크:"https://naver.me/FO9od7NM" },
+    { 이름:"바로 파스타마켓", 종류들:["양식"], 분:9, 동대입구:false, 링크:"https://naver.me/FeXRpkTF" },
+    { 이름:"1986호랑이감자탕", 종류들:["한식"], 분:9, 동대입구:false, 링크:"https://naver.me/FJIGZexb" },
+    { 이름:"대가스시", 종류들:["일식"], 분:12, 동대입구:false, 링크:"https://naver.me/xtgM1BfU" },
+    { 이름:"파인트룸", 종류들:["일식"], 분:10, 동대입구:false, 링크:"https://naver.me/Fafy8cyr" },
+    { 이름:"진더미엔", 종류들:["중식"], 분:10, 동대입구:false, 링크:"https://naver.me/GoD7FRAY" },
+    { 이름:"붓골집 필동점", 종류들:["한식"], 분:8, 동대입구:false, 링크:"https://naver.me/FvEgzlpe" },
+    { 이름:"영동골방", 종류들:["한식"], 분:8, 동대입구:false, 링크:"https://naver.me/5bVs7D2R" },
+    { 이름:"오길칠비스트로", 종류들:["양식"], 분:13, 동대입구:false, 링크:"https://naver.me/G4Wo5OL3" },
+    { 이름:"묵정", 종류들:["한식"], 분:4, 동대입구:false, 링크:"https://naver.me/FHlg0LKc" },
+    { 이름:"태화루", 종류들:["중식"], 분:4, 동대입구:false, 링크:"https://naver.me/FO9oFzMJ" },
+    { 이름:"노베", 종류들:["양식"], 분:4, 동대입구:false, 링크:"https://naver.me/5v3tpkNE" },
+    { 이름:"존라멘", 종류들:["일식"], 분:8, 동대입구:false, 링크:"https://naver.me/xExWtFwv" },
+    { 이름:"산정", 종류들:["고기"], 분:12, 동대입구:true, 링크:"https://naver.me/FtThlKRj" },
+    { 이름:"앰배서더 서울 풀만 호텔 1955 그로서리아", 종류들:["양식"], 분:6, 동대입구:false, 링크:"https://naver.me/5vciVVsE" },
+    { 이름:"센몬", 종류들:["일식"], 분:16, 동대입구:true, 링크:"https://naver.me/5JGJdmVV" },
+    { 이름:"돈돈돈까스", 종류들:["일식"], 분:15, 동대입구:true, 링크:"https://naver.me/FdCxzD8y" },
+    { 이름:"콩365", 종류들:["동양"], 분:17, 동대입구:true, 링크:"https://naver.me/55rmZHd4" },
+    { 이름:"고젠", 종류들:["일식"], 분:16, 동대입구:true, 링크:"https://naver.me/xucp8zjO" },
+    { 이름:"도치피자 장충", 종류들:["양식"], 분:17, 동대입구:true, 링크:"https://naver.me/xmxIakzQ" },
+    { 이름:"스시도", 종류들:["일식"], 분:15, 동대입구:true, 링크:"https://naver.me/FG7xSBgC" },
+    { 이름:"장충동진두부집", 종류들:["한식"], 분:17, 동대입구:true, 링크:"https://naver.me/x5GoyhYD" },
+    { 이름:"아구랑꽃게랑", 종류들:["한식"], 분:17, 동대입구:true, 링크:"https://naver.me/Gq84cWkX" },
+    { 이름:"함흥에겨울냉면", 종류들:["한식"], 분:15, 동대입구:true, 링크:"https://naver.me/FDnSw6nB" },
+    { 이름:"한와담 가든", 종류들:["고기"], 분:16, 동대입구:true, 링크:"https://naver.me/GFB1OCJ1" },
+    { 이름:"송원", 종류들:["고기"], 분:17, 동대입구:true, 링크:"https://naver.me/FY3yChV3" },
+    { 이름:"보틀러", 종류들:["양식"], 분:16, 동대입구:false, 링크:"https://naver.me/xNLZ5Xpa" },
+    { 이름:"그릴데미그라스", 종류들:["양식"], 분:15, 동대입구:false, 링크:"https://naver.me/5du4chKR" },
+    { 이름:"동래정 충무로점", 종류들:["고기"], 분:12, 동대입구:false, 링크:"https://naver.me/FcmA1EGu" },
+    { 이름:"한사리감자탕&뼈구이 충무로점", 종류들:["한식"], 분:6, 동대입구:false, 링크:"https://naver.me/GXApzkuB" },
+    { 이름:"필동함박 충무로 본점", 종류들:["양식"], 분:7, 동대입구:false, 링크:"https://naver.me/FbOnwufF" },
+    { 이름:"카츠공방 충무로역점", 종류들:["일식"], 분:7, 동대입구:false, 링크:"https://naver.me/xOxHzL8D" },
+    { 이름:"필동카츠", 종류들:["일식"], 분:7, 동대입구:false, 링크:"https://naver.me/5chu7mwF" },
+    { 이름:"마라식객 필동점", 종류들:["중식"], 분:6, 동대입구:false, 링크:"https://naver.me/x5Goeo2k" },
+    { 이름:"삼삼뼈국 막국수 충무로점", 종류들:["한식"], 분:5, 동대입구:false, 링크:"https://naver.me/FTXmByj8" },
+    { 이름:"오발탄 충무로점", 종류들:["고기"], 분:10, 동대입구:false, 링크:"https://naver.me/FbOnz4DN" },
+    { 이름:"충무로 기몽 비스트로", 종류들:["양식"], 분:11, 동대입구:false, 링크:"https://naver.me/5QsPrDnL" },
+    { 이름:"김후동 조림집", 종류들:["한식"], 분:10, 동대입구:false, 링크:"https://naver.me/x5GowaMf" },
+    { 이름:"산타돈부리", 종류들:["일식"], 분:5, 동대입구:false, 링크:"https://naver.me/F2ZumFWP" },
+    { 이름:"써브웨이 충무로점", 종류들:["라이트"], 분:11, 동대입구:false, 링크:"https://naver.me/Fy2mczMH" },
+    { 이름:"성원정", 종류들:["한식"], 분:9, 동대입구:false, 링크:"https://naver.me/GG7tHQqy" },
+    { 이름:"쌈사랑", 종류들:["한식"], 분:10, 동대입구:false, 링크:"https://naver.me/F9NawmDu" },
+    { 이름:"양산도 충무로점", 종류들:["고기"], 분:7, 동대입구:false, 링크:"https://naver.me/Fc6a1KcI" },
+    { 이름:"Poke all day 포케&샐러드 충무로점", 종류들:["라이트"], 분:7, 동대입구:false, 링크:"https://naver.me/GYC93tCV" },
+    { 이름:"낙원의소바 보쌈칼국수 충무로역본점", 종류들:["일식"], 분:4, 동대입구:false, 링크:"https://naver.me/59vocMrC" },
+    { 이름:"복정집", 종류들:["한식"], 분:7, 동대입구:false, 링크:"https://naver.me/5vcHXHeE" },
+    { 이름:"빕스 제일제당센터점", 종류들:["양식"], 분:11, 동대입구:false, 링크:"https://naver.me/xExWzmzM" },
+    { 이름:"제일제면소 제일제당센터점", 종류들:["한식"], 분:11, 동대입구:false, 링크:"https://naver.me/FjbWbjmo" },
+    { 이름:"센몬", 종류들:["일식"], 분:16, 동대입구:true, 링크:"https://naver.me/xl0tuLjt" },
+    { 이름:"BEEFY", 종류들:["양식"], 분:12, 동대입구:false, 링크:"https://naver.me/5A3pKG5I" },
+    { 이름:"피제이레스토랑", 종류들:["양식"], 분:13, 동대입구:false, 링크:"https://naver.me/xq3aPhM1" },
+    { 이름:"무수히", 종류들:["한식"], 분:14, 동대입구:false, 링크:"https://naver.me/GnRIkHez" },
+    { 이름:"페이퍼파스타by을지로그랑블루", 종류들:["양식"], 분:14, 동대입구:false, 링크:"https://naver.me/Gsj2axzZ" },
+    { 이름:"로스트 템플", 종류들:["동양"], 분:12, 동대입구:false, 링크:"https://naver.me/FfeOzDxC" },
+    { 이름:"카르보 파스타바 을지로", 종류들:["양식"], 분:16, 동대입구:false, 링크:"https://naver.me/FtG5XYxn" },
+    { 이름:"박지후스시", 종류들:["일식"], 분:15, 동대입구:false, 링크:"https://naver.me/502MVbDr" },
+    { 이름:"바오서울 충무로", 종류들:["동양"], 분:17, 동대입구:false, 링크:"https://naver.me/5XJIYMrp" },
+    { 이름:"진작", 종류들:["일식"], 분:18, 동대입구:false, 링크:"https://naver.me/G7V4d23d" },
+    { 이름:"제주상회 을지로점", 종류들:["한식"], 분:16, 동대입구:false, 링크:"https://naver.me/xv3DvfWn" },
+    { 이름:"을옥닭갈비", 종류들:["한식"], 분:16, 동대입구:false, 링크:"https://naver.me/FK0ImUNr" },
+    { 이름:"멘츠루 을지로점", 종류들:["일식"], 분:16, 동대입구:false, 링크:"https://naver.me/xf5mNnOU" },
+    { 이름:"태능감자탕 을지로3가점", 종류들:["한식"], 분:16, 동대입구:false, 링크:"https://naver.me/5Qs3DJPw" },
+    { 이름:"스탬파", 종류들:["양식"], 분:15, 동대입구:false, 링크:"https://naver.me/5T4AZr68" },
+    { 이름:"츠야카츠 충무로 본점", 종류들:["일식"], 분:16, 동대입구:false, 링크:"https://naver.me/xNLZU7TA" },
+    { 이름:"진고개", 종류들:["한식"], 분:14, 동대입구:false, 링크:"https://naver.me/FzSZ5pzb" },
+    { 이름:"뉴잭피자 을지로본점", 종류들:["양식"], 분:13, 동대입구:false, 링크:"https://naver.me/Fpx82q9Q" },
+    { 이름:"장담 충무로 본점", 종류들:["한식"], 분:13, 동대입구:false, 링크:"https://naver.me/GXgF0sQP" },
+    { 이름:"샤오리앤 충무로본점", 종류들:["중식"], 분:11, 동대입구:false, 링크:"https://naver.me/5S9Qr37K" },
+    { 이름:"행복은간장밥 충무로점", 종류들:["한식"], 분:10, 동대입구:false, 링크:"https://naver.me/xY47Bl7F" },
+    { 이름:"쪼이누들샵 충무로점", 종류들:["동양"], 분:10, 동대입구:false, 링크:"https://naver.me/xcgXZhZl" },
+    { 이름:"OOOA 충무로점", 종류들:["양식"], 분:4, 동대입구:false, 링크:"https://naver.me/GwfKOoDp" },
+    { 이름:"호앙비엣", 종류들:["동양"], 분:2, 동대입구:false, 링크:"https://naver.me/xX7O5p4H" },
+    { 이름:"남산골", 종류들:["한식"], 분:2, 동대입구:false, 링크:"https://naver.me/xCB75H44" },
+    { 이름:"강서", 종류들:["중식"], 분:3, 동대입구:false, 링크:"https://naver.me/F74V6jK9" },
+    { 이름:"본죽&비빔밥 충무로역점", 종류들:["한식"], 분:3, 동대입구:false, 링크:"https://naver.me/5ss0rHbJ" },
+    { 이름:"여수상회", 종류들:["한식"], 분:3, 동대입구:false, 링크:"https://naver.me/5OQyiUu7" },
+    { 이름:"브루클린 부대찌개", 종류들:["한식"], 분:3, 동대입구:false, 링크:"https://naver.me/xoGDw73x" },
+    { 이름:"우동키노야 을지로점", 종류들:["일식"], 분:13, 동대입구:false, 링크:"https://naver.me/FO9oxuQb" },
+  ];
+
+  const EMOJI={한식:"🍚",양식:"🍝",일식:"🍣",중식:"🥟",동양:"🍜",고기:"🍖",라이트:"🥗"};
+  const 순서=["한식","양식","일식","중식","동양","고기","라이트"];
+  const emojiFor=c=>EMOJI[c]||"🍴";
+
+  let 목록=[], 선택집합=new Set(), 최대분=20, 동대입구모드=false, rolling=false;
+
+  const $=id=>document.getElementById(id);
+  const safe=s=>String(s??"").replace(/[<>&]/g,m=>({"<":"&lt;",">":"&gt;","&":"&amp;"}[m]));
+  const 카테분해=s=>String(s??"").split(/[,/·、;|／]+/).map(x=>x.trim()).filter(Boolean);
+
+  /* ── CSV 파서 ── */
+  function parseCSV(text){
+    const rows=[]; let row=[],f="",inQ=false;
+    for(let i=0;i<text.length;i++){
+      const ch=text[i];
+      if(inQ){ if(ch==='"'){ if(text[i+1]==='"'){f+='"';i++;} else inQ=false; } else f+=ch; }
+      else{
+        if(ch==='"') inQ=true;
+        else if(ch===',') { row.push(f); f=""; }
+        else if(ch==='\r'){}
+        else if(ch==='\n'){ row.push(f); rows.push(row); row=[]; f=""; }
+        else f+=ch;
+      }
+    }
+    if(f!==""||row.length){ row.push(f); rows.push(row); }
+    return rows;
+  }
+  function fromCSV(text){
+    const rows=parseCSV(text).filter(r=>r.length && r.some(c=>c!==""));
+    if(!rows.length) return [];
+    const H=rows[0].map(h=>h.trim());
+    const find=(...names)=>H.findIndex(h=>names.some(n=>h===n)||names.some(n=>h.includes(n)));
+    const iN=find("식당이름","이름"), iC=find("카테고리","종류"),
+          iM=find("도보"), iD=find("동대입구"), iU=find("링크","url","URL");
+    const out=[];
+    for(let k=1;k<rows.length;k++){
+      const r=rows[k];
+      const 이름=(r[iN]||"").trim();
+      if(!이름) continue;
+      let cats=카테분해(r[iC]); if(!cats.length) cats=["기타"];
+      out.push({
+        이름, 종류들:cats,
+        분: parseInt((r[iM]||"").trim(),10)||0,
+        동대입구: /^(true|1|y|yes|참|o)$/i.test((r[iD]||"").trim()),
+        링크:(r[iU]||"").trim()
+      });
+    }
+    return out;
+  }
+
+  function 카테고리목록(){
+    const seen=[...new Set(목록.flatMap(r=>r.종류들))];
+    const known=순서.filter(c=>seen.includes(c));
+    const extra=seen.filter(c=>!순서.includes(c));
+    return [...known,...extra];
+  }
+  function 거리동대만족(r){ return 동대입구모드 ? r.동대입구===true : Number(r.분)<=최대분; }
+  function 필터(){
+    return 목록.filter(r=> 거리동대만족(r) && (선택집합.size===0 || r.종류들.some(c=>선택집합.has(c))) );
+  }
+  function 카운트(c){ // c==null 이면 전체
+    return 목록.filter(r=> 거리동대만족(r) && (c==null || r.종류들.includes(c)) ).length;
+  }
+
+  function 힌트(){
+    const n=선택집합.size;
+    $("hintline").textContent = n===0 ? "카테고리를 누르면 여러 개 겹쳐 고를 수 있어요"
+                                      : `${[...선택집합].join(" · ")} 중에서 뽑기 (다시 누르면 해제)`;
+  }
+
+  function 키패드그리기(){
+    const cats=카테고리목록();
+    선택집합=new Set([...선택집합].filter(c=>cats.includes(c))); // 없어진 카테고리 정리
+    const box=$("keypad"); box.innerHTML="";
+    const a=document.createElement("button");
+    a.className="key key-all"; a.type="button";
+    a.setAttribute("aria-pressed",선택집합.size===0?"true":"false");
+    a.innerHTML=`<span class="em">🍽️</span>전체<span class="cnt">${카운트(null)}</span>`;
+    a.onclick=()=>{ 선택집합.clear(); 키패드그리기(); };
+    box.appendChild(a);
+    const row=document.createElement("div"); row.className="key-row";
+    cats.forEach(c=>{
+      const b=document.createElement("button");
+      b.className="key key-c"; b.type="button";
+      b.setAttribute("aria-pressed",선택집합.has(c)?"true":"false");
+      b.innerHTML=`<span class="em">${emojiFor(c)}</span><span class="lb">${safe(c)}</span><span class="cnt">${카운트(c)}</span>`;
+      b.onclick=()=>{ 선택집합.has(c)?선택집합.delete(c):선택집합.add(c); 키패드그리기(); };
+      row.appendChild(b);
+    });
+    box.appendChild(row);
+    힌트();
+  }
+
+  function 색종이(){
+    const host=$("confetti"), colors=["#E24E32","#F2B33D","#127C6B","#241E17","#FBF3E2"];
+    for(let k=0;k<26;k++){
+      const p=document.createElement("i"); p.className="cp";
+      p.style.left=(Math.random()*100)+"vw"; p.style.background=colors[k%colors.length];
+      const dur=1.5+Math.random()*1.1;
+      p.style.animation=`fall ${dur}s cubic-bezier(.25,.6,.4,1) forwards`;
+      p.style.animationDelay=(Math.random()*.18)+"s";
+      host.appendChild(p); setTimeout(()=>p.remove(),(dur+.4)*1000);
+    }
+  }
+
+  function 영수증(r){
+    const link=r.링크&&/^https?:\/\//.test(r.링크);
+    $("result").innerHTML=`
+      <div class="receipt-anim">
+        <div class="receipt">
+          <div class="r-head">◼ 오늘의 점심 식권 ◼</div>
+          <div class="r-name">${safe(r.이름)}</div>
+          <div class="r-tag"><span>${safe(r.종류들.join(" · "))}</span></div>
+          <div class="sep"></div>
+          <div class="r-line"><span class="k">거리</span><span class="v">도보 ${safe(r.분)}분</span></div>
+          ${r.동대입구?`<div class="r-line"><span class="k">구역</span><span class="v">동대입구 근처</span></div>`:""}
+          <div class="sep"></div>
+          ${link?`<a class="map-btn" href="${safe(r.링크)}" target="_blank" rel="noopener noreferrer">📍 네이버 지도에서 보기</a>`
+                :`<span class="map-btn off">링크가 아직 없어요</span>`}
+        </div>
+        <div class="torn"></div>
+      </div>`;
+  }
+  function 빈상태(){ $("result").innerHTML=`<div class="empty">이 조건에 맞는 식당이 없어요.<br>거리를 늘리거나 카테고리를 바꿔보세요.</div>`; }
+
+  function 뽑기(){
+    if(rolling) return;
+    const 후보=필터(); $("result").innerHTML="";
+    if(후보.length===0){ 빈상태(); return; }
+    const 당첨=후보[Math.floor(Math.random()*후보.length)];
+    rolling=true;
+    const btn=$("rollBtn"), label=btn.textContent;
+    btn.disabled=true; btn.classList.add("rolling"); btn.textContent="두구두구두구…";
+    setTimeout(()=>{
+      btn.classList.remove("rolling"); btn.textContent=label; btn.disabled=false; rolling=false;
+      영수증(당첨); 색종이();
+    },1300);
+  }
+
+  function 상태(msg,err){ const s=$("status"); s.textContent=msg; s.classList.toggle("err",!!err); }
+
+  async function 데이터불러오기(){
+    if(SHEET_CSV_URL){
+      상태("시트에서 불러오는 중…");
+      try{
+        const res=await fetch(SHEET_CSV_URL,{cache:"no-store"});
+        if(!res.ok) throw new Error("http");
+        const parsed=fromCSV(await res.text());
+        if(!parsed.length) throw new Error("empty");
+        목록=parsed; 상태("시트에서 불러옴 · "+목록.length+"곳");
+      }catch(e){
+        목록=기본목록.map(x=>({...x,종류들:[...x.종류들]}));
+        상태("시트 연결 실패 · 기본 목록 사용("+목록.length+"곳)",true);
+      }
+    }else{
+      목록=기본목록.map(x=>({...x,종류들:[...x.종류들]}));
+      상태("기본 목록 · "+목록.length+"곳");
+    }
+    키패드그리기();
+  }
+
+  (function init(){
+    if(SHEET_EDIT_URL){ const el=$("editLink"); el.href=SHEET_EDIT_URL; el.style.display="inline-block"; }
+    $("dist").addEventListener("input",e=>{ 최대분=Number(e.target.value); $("distVal").textContent=최대분; 키패드그리기(); });
+    $("ddSwitch").addEventListener("click",()=>{
+      동대입구모드=!동대입구모드;
+      $("ddSwitch").setAttribute("aria-pressed",동대입구모드?"true":"false");
+      $("dist").disabled=동대입구모드; 키패드그리기();
+    });
+    $("rollBtn").addEventListener("click",뽑기);
+    $("refresh").addEventListener("click",()=>{ $("result").innerHTML=""; 데이터불러오기(); });
+    데이터불러오기();
+  })();
+</script>
+</body>
+</html>
